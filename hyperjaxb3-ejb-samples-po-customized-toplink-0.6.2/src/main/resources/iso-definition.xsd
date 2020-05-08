@@ -1,0 +1,1014 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Document   : iso-definition.xsd
+  Created on : 25 Nov 2011 г., 17:30
+  Changed on : 03 Sep 2013 г., 19:50
+  Author     : Nikolay D. Bychinskiy
+  Description: XML Schema for HostInterface SDK ISO-8583 definition files
+  Changes (v1.0.3):
+    * Multiple response definitions in the message template
+    * Custom field containers
+    * New number field formats
+    * Validation of a message template key field
+    * Extensions (features) support
+  Changes (v1.0.4):
+    * Binary constant fields
+    * Multiple fields as a request key
+    * New field custom type (composite)
+    * Inversion of template mathing rules
+    * Conditional field definitions
+    * New template definition section style
+    * Binary trace support
+    * Metadata publishing support
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ns="http://schemas.compassplus.com/sdk/1.0/iso_definition.xsd" targetNamespace="http://schemas.compassplus.com/sdk/1.0/iso_definition.xsd" elementFormDefault="qualified" attributeFormDefault="unqualified" xmlns:jaxb="http://java.sun.com/xml/ns/jaxb" jaxb:version="1.0">
+    <xs:element name="definition">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="ns:types" />
+                <xs:element ref="ns:fields" />
+                <xs:choice>
+                    <xs:element ref="ns:messages" />
+                    <xs:element ref="ns:templates" />
+                </xs:choice>
+            </xs:sequence>
+            <xs:attribute name="name" use="required" type="xs:string" />
+            <xs:attribute name="version" use="optional" default="1.0"/>
+        </xs:complexType>
+        <xs:key name="type">
+            <xs:selector xpath="./ns:types/ns:*"/>
+            <xs:field xpath="@name"/>
+        </xs:key>
+        <xs:keyref name="type_ref" refer="ns:type">
+            <!--
+                Types can be referenced in:
+                  * Custom field
+                  * Custom array field
+                  * Custom conditional field
+                  * Custom array conditional field
+                Field can be declared in:
+                  * Struct type definition
+                  * Composite type definition
+                  * Message fields definition
+                  * Header definition
+            -->
+            <xs:selector xpath="./ns:fields/ns:custom|
+                                ./ns:fields/ns:array/ns:custom|
+                                ./ns:fields/ns:condition/ns:*/ns:custom|
+                                ./ns:fields/ns:condition/ns:*/ns:array/ns:custom|
+                                ./ns:fields/ns:header/ns:custom|
+                                ./ns:fields/ns:header/ns:array/ns:custom|
+                                ./ns:fields/ns:header/ns:condition/ns:*/ns:custom|
+                                ./ns:fields/ns:header/ns:condition/ns:*/ns:array/ns:custom|
+                                ./ns:types/ns:struct/ns:custom|
+                                ./ns:types/ns:struct/ns:array/ns:custom|
+                                ./ns:types/ns:struct/ns:condition/ns:*/ns:custom|
+                                ./ns:types/ns:struct/ns:condition/ns:*/ns:array/ns:custom|
+                                ./ns:types/ns:composite/ns:custom|
+                                ./ns:types/ns:composite/ns:array/ns:custom|
+                                ./ns:types/ns:composite/ns:condition/ns:*/ns:custom|
+                                ./ns:types/ns:composite/ns:condition/ns:*/ns:array/ns:custom|
+                                ./ns:types/ns:composite/ns:header/ns:custom|
+                                ./ns:types/ns:composite/ns:header/ns:array/ns:custom|
+                                ./ns:types/ns:composite/ns:header/ns:condition/ns:*/ns:custom|
+                                ./ns:types/ns:composite/ns:header/ns:condition/ns:*/ns:array/ns:custom" />
+            <xs:field xpath="@type" />
+        </xs:keyref>
+    </xs:element>
+
+    <!-- sections -->
+    <xs:element name="types">
+        <xs:complexType>
+            <xs:group ref="ns:types" minOccurs="0" maxOccurs="unbounded" />
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="fields">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:extension base="ns:body" />
+            </xs:complexContent>
+        </xs:complexType>
+        <xs:unique name="message_field">
+            <xs:selector xpath="./ns:*|./ns:header/ns:*|./ns:condition/ns:*/ns:*|./ns:header/ns:condition/ns:*/ns:*"/>
+            <xs:field xpath="@name"/>
+        </xs:unique>
+        <xs:unique name="message_index">
+            <xs:selector xpath="./ns:*"/>
+            <xs:field xpath="@index"/>
+        </xs:unique>
+    </xs:element>
+    <xs:element name="messages">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="class" type="ns:rule" />
+                <xs:element name="id" type="ns:rule" />
+                <xs:element name="message" maxOccurs="unbounded" type="ns:requestDefinition" />
+            </xs:sequence>
+        </xs:complexType>
+        <xs:unique name="messages">
+            <xs:selector xpath="./ns:message/ns:response|./ns:message"/>
+            <xs:field xpath="@name"/>
+        </xs:unique>
+    </xs:element>
+    <xs:element name="templates">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="template" type="ns:template" maxOccurs="unbounded" />
+            </xs:sequence>
+            <xs:attribute name="class" type="xs:string" use="required" />
+            <xs:attribute name="key" type="xs:string" use="optional" default="" />
+        </xs:complexType>
+    </xs:element>
+
+    <!-- templates -->
+    <xs:complexType name="template" abstract="true">
+        <xs:attribute name="validate" type="xs:boolean" use="optional" default="true" />
+        <xs:attribute name="authentify" type="xs:boolean" use="optional" default="true" />
+        <xs:attribute name="name" type="xs:string" use="required" />
+        <xs:attribute name="key" use="required" type="xs:ID" />
+    </xs:complexType>
+    <xs:complexType name="request">
+        <xs:complexContent>
+            <xs:extension base="ns:template">
+                <xs:group ref="ns:requestRules" maxOccurs="unbounded"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="notification">
+        <xs:complexContent>
+            <xs:extension base="ns:template">
+                <xs:group ref="ns:requestRules" maxOccurs="unbounded"/>
+                <xs:attribute name="parent" use="optional" type="xs:IDREF" />
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="response">
+        <xs:complexContent>
+            <xs:extension base="ns:template">
+                <xs:group ref="ns:responseRules" maxOccurs="unbounded"/>
+                <xs:attribute name="parent" use="required" type="xs:IDREF" />
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="repeat">
+        <xs:complexContent>
+            <xs:extension base="ns:template">
+                <xs:group ref="ns:requestRules" maxOccurs="unbounded"/>
+                <xs:attribute name="parent" use="required" type="xs:IDREF" />
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <!-- messages -->
+    <xs:complexType name="requestDefinition">
+        <xs:sequence>
+            <xs:sequence minOccurs="0">
+                <xs:element name="response" minOccurs="1" maxOccurs="unbounded" type="ns:responseDefinition"/>
+                <xs:element name="repeat" minOccurs="0" type="ns:repeatDefinition" />
+            </xs:sequence>
+            <xs:group ref="ns:requestRules" maxOccurs="unbounded" />
+        </xs:sequence>
+        <xs:attribute name="name" type="ns:name" use="required" />
+        <xs:attribute name="validate" type="xs:boolean" use="optional" default="true" />
+        <xs:attribute name="mac" type="xs:boolean" use="optional" default="true" />
+    </xs:complexType>
+    <xs:complexType name="responseDefinition">
+        <xs:sequence>
+            <xs:group ref="ns:responseRules" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="name" type="ns:name" use="optional" />
+    </xs:complexType>
+    <xs:complexType name="repeatDefinition">
+        <xs:sequence>
+            <xs:group ref="ns:requestRules" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- types -->
+    <xs:complexType name="structType">
+        <xs:complexContent>
+            <xs:extension base="ns:struct">
+                <xs:attribute name="name" type="xs:string" use="required" />
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="compositeType">
+        <xs:complexContent>
+            <xs:extension base="ns:body">
+                <xs:attribute name="name" type="xs:string" use="required" />
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="javaType" mixed="true">
+        <xs:attribute name="name" type="xs:string" use="required" />
+        <xs:attribute name="provider" type="ns:class" use="required" />
+    </xs:complexType>
+
+    <xs:group name="types">
+        <xs:choice>
+            <xs:element name="struct" type="ns:structType">
+                <xs:unique name="struct_field">
+                    <xs:selector xpath="./ns:*|./ns:condition/ns:*/ns:*"/>
+                    <xs:field xpath="@name"/>
+                </xs:unique>
+            </xs:element>
+            <xs:element name="composite" type="ns:compositeType">
+                <xs:unique name="composite_field">
+                    <xs:selector xpath="./ns:*|./ns:header/ns:*|./ns:condition/ns:*/ns:*|./ns:header/ns:condition/ns:*/ns:*"/>
+                    <xs:field xpath="@name"/>
+                </xs:unique>
+                <xs:unique name="composite_index">
+                    <xs:selector xpath="./ns:*"/>
+                    <xs:field xpath="@index"/>
+                </xs:unique>
+            </xs:element>
+            <xs:element name="java" type="ns:javaType" />
+        </xs:choice>
+    </xs:group>
+
+    <!-- models -->
+    <xs:complexType name="struct">
+        <xs:sequence>
+            <xs:group ref="ns:structFields" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="header">
+        <xs:complexContent>
+            <xs:extension base="ns:field">
+                <xs:sequence>
+                    <xs:group ref="ns:structFields" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="bitmap" type="ns:specialField"/>
+                    <xs:element name="mac" type="ns:specialField" minOccurs="0"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="body">
+        <xs:sequence>
+            <xs:element name="header" type="ns:header" />
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:group ref="ns:indexFields" />
+                <xs:element name="condition">
+                    <xs:complexType>
+                        <xs:complexContent>
+                            <xs:extension base="ns:conditionField">
+                                <xs:attribute name="index" type="xs:unsignedShort" use="required" />
+                            </xs:extension>
+                        </xs:complexContent>
+                    </xs:complexType>
+                </xs:element>
+            </xs:choice>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- conditions -->
+    <xs:complexType name="condition" abstract="true">
+        <xs:group minOccurs="1" maxOccurs="1" ref="ns:conditionFields" />
+    </xs:complexType>
+    <xs:complexType name="conditionLong">
+        <xs:complexContent>
+            <xs:extension base="ns:condition">
+                <xs:attribute name="path" use="required" type="xs:string" />
+                <xs:attribute name="value" use="required" type="xs:long" />
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="conditionString">
+        <xs:complexContent>
+            <xs:extension base="ns:condition">
+                <xs:attribute name="path" use="required" type="xs:string" />
+                <xs:attribute name="value" use="required" type="xs:string" />
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="conditionCustom">
+        <xs:complexContent>
+            <xs:extension base="ns:condition">
+                <xs:attribute name="condition" type="ns:class" use="required" />
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="conditionAttribute">
+        <xs:complexContent>
+            <xs:extension base="ns:condition">
+                <xs:attribute name="key" use="required" type="xs:string" />
+                <xs:attribute name="value" use="required" type="xs:string" />
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="conditionDefault">
+        <xs:complexContent>
+            <xs:extension base="ns:condition" />
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:group name="conditions">
+        <xs:sequence>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="string" type="ns:conditionString" />
+                <xs:element name="long" type="ns:conditionLong" />
+                <xs:element name="custom" type="ns:conditionCustom" />
+                <xs:element name="attribute" type="ns:conditionAttribute" />
+            </xs:choice>
+            <xs:element name="default" minOccurs="0" maxOccurs="1" type="ns:conditionDefault" />
+        </xs:sequence>
+    </xs:group>
+
+    <!-- fields -->
+    <xs:complexType name="field" abstract="true">
+        <xs:attribute name="charset" type="xs:string" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="conditionField">
+        <xs:complexContent>
+            <xs:extension base="ns:field">
+                <xs:group ref="ns:conditions" />
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="specialField">
+        <xs:complexContent>
+            <xs:extension base="ns:field">
+                <xs:attribute name="format" type="ns:formatBinary" use="optional" default="binary_hex"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="constField">
+        <xs:complexContent>
+            <xs:extension base="ns:field">
+                <xs:attribute name="value" type="xs:string" use="required"/>
+                <xs:attribute name="format" use="optional" default="string">
+                    <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                            <xs:enumeration value="string" />
+                            <xs:enumeration value="binary" />
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="binaryField">
+        <xs:complexContent>
+            <xs:extension base="ns:field">
+                <xs:sequence>
+                    <xs:element name="container" minOccurs="0" type="ns:fieldContainer"/>
+                    <xs:element name="mask" minOccurs="0" type="ns:fieldMask"/>
+                    <xs:element name="constraint" minOccurs="0" maxOccurs="unbounded">
+                        <xs:complexType>
+                            <xs:attribute name="equal" type="xs:hexBinary" use="optional"/>
+                            <xs:attribute name="contains" type="xs:hexBinary" use="optional"/>
+                        </xs:complexType>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attribute name="format" type="ns:formatBinary" use="optional" default="binary"/>
+                <xs:attribute name="default" type="xs:hexBinary" use="optional" default=""/>
+
+                <xs:attribute name="fill" type="xs:hexBinary" use="optional" />
+                <xs:attribute name="align" type="ns:align" use="optional" />
+
+                <xs:attribute name="length" type="xs:int" use="optional" default="0" />
+                <xs:attribute name="var" type="xs:boolean" use="optional" default="false"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="stringField">
+        <xs:complexContent>
+            <xs:extension base="ns:field">
+                <xs:sequence>
+                    <xs:element name="container" minOccurs="0" type="ns:fieldContainer"/>
+                    <xs:element name="mask" minOccurs="0" type="ns:fieldMask"/>
+                    <xs:element name="constraint" minOccurs="0" maxOccurs="unbounded">
+                        <xs:complexType>
+                            <xs:attribute name="pattern" type="xs:string" use="optional"/>
+                            <xs:attribute name="contains" type="xs:string" use="optional"/>
+                            <xs:attribute name="equal" type="xs:string" use="optional"/>
+                            <xs:attribute name="greater" type="xs:string" use="optional"/>
+                            <xs:attribute name="less" type="xs:string" use="optional"/>
+                        </xs:complexType>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attribute name="format" type="ns:formatString" use="optional" default="string"/>
+                <xs:attribute name="default" type="xs:string" use="optional" default=""/>
+
+                <xs:attribute name="fill" type="xs:string" use="optional" />
+                <xs:attribute name="align" type="ns:align" use="optional" />
+
+                <xs:attribute name="length" type="xs:int" use="optional" default="0" />
+                <xs:attribute name="var" type="xs:boolean" use="optional" default="false"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="dateField">
+        <xs:complexContent>
+            <xs:extension base="ns:field">
+                <xs:sequence>
+                    <xs:element name="container" minOccurs="0" type="ns:fieldContainer"/>
+                </xs:sequence>
+                <xs:attribute name="format" type="xs:string" use="required" />
+                <xs:attribute name="empty" type="xs:string" use="optional" />
+                <xs:attribute name="zone" type="xs:string" use="optional" />
+
+                <xs:attribute name="align" type="ns:align" use="optional" />
+                <xs:attribute name="fill" type="xs:string" use="optional" />
+
+                <xs:attribute name="length" type="xs:int" use="optional" default="0" />
+                <xs:attribute name="var" type="xs:boolean" use="optional" default="false"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="integerField">
+        <xs:complexContent>
+            <xs:extension base="ns:field">
+                <xs:sequence>
+                    <xs:element name="container" minOccurs="0" type="ns:fieldContainer"/>
+                    <xs:element name="mask" minOccurs="0" type="ns:fieldMask"/>
+                    <xs:element name="constraint" minOccurs="0" maxOccurs="unbounded">
+                        <xs:complexType>
+                            <xs:attribute name="min" type="xs:integer" use="optional"/>
+                            <xs:attribute name="max" type="xs:integer" use="optional"/>
+                            <xs:attribute name="equal" type="xs:integer" use="optional"/>
+                            <xs:attribute name="greater" type="xs:integer" use="optional"/>
+                            <xs:attribute name="less" type="xs:integer" use="optional"/>
+                        </xs:complexType>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attribute name="format" type="ns:formatInteger" use="optional" default="uint"/>
+                <xs:attribute name="default" type="xs:integer" use="optional" default="0"/>
+                <xs:attribute name="offset" type="xs:integer" use="optional" default="0"/>
+
+                <xs:attribute name="fill" type="xs:string" use="optional" />
+                <xs:attribute name="align" type="ns:align" use="optional" />
+
+                <xs:attribute name="length" type="xs:int" use="optional" default="0" />
+                <xs:attribute name="var" type="xs:boolean" use="optional" default="false"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="longField">
+        <xs:complexContent>
+            <xs:extension base="ns:field">
+                <xs:sequence>
+                    <xs:element name="container" minOccurs="0" type="ns:fieldContainer"/>
+                    <xs:element name="mask" minOccurs="0" type="ns:fieldMask"/>
+                    <xs:element name="constraint" minOccurs="0" maxOccurs="unbounded">
+                        <xs:complexType>
+                            <xs:attribute name="min" type="xs:long" use="optional"/>
+                            <xs:attribute name="max" type="xs:long" use="optional"/>
+                            <xs:attribute name="equal" type="xs:long" use="optional"/>
+                            <xs:attribute name="greater" type="xs:long" use="optional"/>
+                            <xs:attribute name="less" type="xs:long" use="optional"/>
+                        </xs:complexType>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attribute name="format" type="ns:formatLong" use="optional" default="uint"/>
+                <xs:attribute name="default" type="xs:long" use="optional" default="0"/>
+                <xs:attribute name="offset" type="xs:long" use="optional" default="0"/>
+
+                <xs:attribute name="fill" type="xs:string" use="optional" />
+                <xs:attribute name="align" type="ns:align" use="optional" />
+
+                <xs:attribute name="length" type="xs:int" use="optional" default="0" />
+                <xs:attribute name="var" type="xs:boolean" use="optional" default="false"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="decimalField">
+        <xs:complexContent>
+            <xs:extension base="ns:field">
+                <xs:sequence>
+                    <xs:element name="container" minOccurs="0" type="ns:fieldContainer"/>
+                    <xs:element name="mask" minOccurs="0" type="ns:fieldMask"/>
+                    <xs:element name="constraint" minOccurs="0" maxOccurs="unbounded">
+                        <xs:complexType>
+                            <xs:attribute name="min" type="xs:decimal" use="optional"/>
+                            <xs:attribute name="max" type="xs:decimal" use="optional"/>
+                            <xs:attribute name="equal" type="xs:decimal" use="optional"/>
+                            <xs:attribute name="greater" type="xs:decimal" use="optional"/>
+                            <xs:attribute name="less" type="xs:decimal" use="optional"/>
+                            <xs:attribute name="scale" type="xs:int" use="optional"/>
+                        </xs:complexType>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attribute name="format" type="ns:formatDecimal" use="optional" default="pp_dec"/>
+                <xs:attribute name="scale" type="xs:int" use="optional" default="2" />
+                <xs:attribute name="default" type="xs:decimal" use="optional" default="0.0"/>
+                <xs:attribute name="offset" type="xs:decimal" use="optional" default="0.0"/>
+
+                <xs:attribute name="fill" type="xs:string" use="optional" />
+                <xs:attribute name="align" type="ns:align" use="optional" />
+
+                <xs:attribute name="length" type="xs:int" use="optional" default="0" />
+                <xs:attribute name="var" type="xs:boolean" use="optional" default="false" />
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="customField">
+        <xs:complexContent>
+            <xs:extension base="ns:field">
+                <xs:sequence>
+                    <xs:element name="container" minOccurs="0" type="ns:fieldContainer"/>
+                    <xs:element name="mask" minOccurs="0" type="ns:fieldMask"/>
+                    <xs:element name="parameter" minOccurs="0" maxOccurs="unbounded">
+                        <xs:complexType>
+                            <xs:attribute name="key" type="ns:name" use="required"/>
+                            <xs:attribute name="value" type="xs:string" use="required"/>
+                        </xs:complexType>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attribute name="type" type="ns:name" use="required"/>
+
+                <xs:attribute name="fill" type="xs:string" use="optional" />
+                <xs:attribute name="align" type="ns:align" use="optional" />
+
+                <xs:attribute name="length" type="xs:int" use="optional" default="0" />
+                <xs:attribute name="var" type="xs:boolean" use="optional" default="false"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="arrayField">
+        <xs:complexContent>
+            <xs:extension base="ns:field">
+                <xs:sequence>
+                    <xs:element name="container" minOccurs="0" type="ns:fieldContainer"/>
+                    <xs:group ref="ns:arrayFields"/>
+                    <xs:element name="constraint" minOccurs="0" maxOccurs="unbounded">
+                        <xs:complexType>
+                            <xs:attribute name="min" type="xs:unsignedShort" use="optional"/>
+                            <xs:attribute name="max" type="xs:unsignedShort" use="optional"/>
+                            <xs:attribute name="equal" type="xs:unsignedShort" use="optional"/>
+                        </xs:complexType>
+                    </xs:element>
+                </xs:sequence>
+                <xs:attribute name="length" type="xs:int" use="optional" default="0" />
+                <xs:attribute name="var" type="xs:boolean" use="optional" default="false"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <!-- groups -->
+    <xs:group name="arrayFields">
+        <xs:choice>
+            <xs:element name="binary" type="ns:binaryField" />
+            <xs:element name="string" type="ns:stringField" />
+            <xs:element name="integer" type="ns:integerField" />
+            <xs:element name="long" type="ns:longField" />
+            <xs:element name="decimal" type="ns:decimalField" />
+            <xs:element name="date" type="ns:dateField"/>
+            <xs:element name="custom" type="ns:customField">
+                <xs:unique name="parameter">
+                    <xs:selector xpath="./ns:parameter"/>
+                    <xs:field xpath="@key"/>
+                </xs:unique>
+            </xs:element>
+        </xs:choice>
+    </xs:group>
+
+    <xs:group name="indexFields">
+        <xs:choice>
+            <xs:element name="binary">
+                <xs:complexType>
+                    <xs:complexContent>
+                        <xs:extension base="ns:binaryField">
+                            <xs:attribute name="name" type="ns:name" use="required" />
+                            <xs:attribute name="index" type="xs:unsignedShort" use="required" />
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="string">
+                <xs:complexType>
+                    <xs:complexContent>
+                        <xs:extension base="ns:stringField">
+                            <xs:attribute name="name" type="ns:name" use="required" />
+                            <xs:attribute name="index" type="xs:unsignedShort" use="required" />
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="integer">
+                <xs:complexType>
+                    <xs:complexContent>
+                        <xs:extension base="ns:integerField">
+                            <xs:attribute name="name" type="ns:name" use="required" />
+                            <xs:attribute name="index" type="xs:unsignedShort" use="required" />
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="long">
+                <xs:complexType>
+                    <xs:complexContent>
+                        <xs:extension base="ns:longField">
+                            <xs:attribute name="name" type="ns:name" use="required" />
+                            <xs:attribute name="index" type="xs:unsignedShort" use="required" />
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="decimal">
+                <xs:complexType>
+                    <xs:complexContent>
+                        <xs:extension base="ns:decimalField">
+                            <xs:attribute name="name" type="ns:name" use="required" />
+                            <xs:attribute name="index" type="xs:unsignedShort" use="required" />
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="date">
+                <xs:complexType>
+                    <xs:complexContent>
+                        <xs:extension base="ns:dateField">
+                            <xs:attribute name="name" type="ns:name" use="required" />
+                            <xs:attribute name="index" type="xs:unsignedShort" use="required" />
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="array">
+                <xs:complexType>
+                    <xs:complexContent>
+                        <xs:extension base="ns:arrayField">
+                            <xs:attribute name="name" type="ns:name" use="required" />
+                            <xs:attribute name="index" type="xs:unsignedShort" use="required" />
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="custom">
+                <xs:complexType>
+                    <xs:complexContent>
+                        <xs:extension base="ns:customField">
+                            <xs:attribute name="name" type="ns:name" use="required" />
+                            <xs:attribute name="index" type="xs:unsignedShort" use="required" />
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+                <xs:unique name="parameter_indexed">
+                    <xs:selector xpath="./ns:parameter"/>
+                    <xs:field xpath="@key"/>
+                </xs:unique>
+            </xs:element>
+            <xs:element name="const">
+                <xs:complexType>
+                    <xs:complexContent>
+                        <xs:extension base="ns:constField">
+                            <xs:attribute name="index" type="xs:unsignedShort" use="required" />
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+        </xs:choice>
+    </xs:group>
+
+    <xs:group name="conditionFields">
+        <xs:choice>
+            <xs:element name="binary">
+                <xs:complexType>
+                    <xs:complexContent>
+                        <xs:extension base="ns:binaryField">
+                            <xs:attribute name="name" type="ns:name" use="required" />
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="string">
+                <xs:complexType>
+                    <xs:complexContent>
+                        <xs:extension base="ns:stringField">
+                            <xs:attribute name="name" type="ns:name" use="required" />
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="integer">
+                <xs:complexType>
+                    <xs:complexContent>
+                        <xs:extension base="ns:integerField">
+                            <xs:attribute name="name" type="ns:name" use="required" />
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="long">
+                <xs:complexType>
+                    <xs:complexContent>
+                        <xs:extension base="ns:longField">
+                            <xs:attribute name="name" type="ns:name" use="required" />
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="decimal">
+                <xs:complexType>
+                    <xs:complexContent>
+                        <xs:extension base="ns:decimalField">
+                            <xs:attribute name="name" type="ns:name" use="required" />
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="date">
+                <xs:complexType>
+                    <xs:complexContent>
+                        <xs:extension base="ns:dateField">
+                            <xs:attribute name="name" type="ns:name" use="required" />
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="array">
+                <xs:complexType>
+                    <xs:complexContent>
+                        <xs:extension base="ns:arrayField">
+                            <xs:attribute name="name" type="ns:name" use="required" />
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="custom">
+                <xs:complexType>
+                    <xs:complexContent>
+                        <xs:extension base="ns:customField">
+                            <xs:attribute name="name" type="ns:name" use="required" />
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+                <xs:unique name="parameter_named_condition">
+                    <xs:selector xpath="./ns:parameter"/>
+                    <xs:field xpath="@key"/>
+                </xs:unique>
+            </xs:element>
+        </xs:choice>
+    </xs:group>
+
+    <xs:group name="structFields">
+        <xs:choice>
+            <xs:element name="binary">
+                <xs:complexType>
+                    <xs:complexContent>
+                        <xs:extension base="ns:binaryField">
+                            <xs:attribute name="name" type="ns:name" use="required" />
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="string">
+                <xs:complexType>
+                    <xs:complexContent>
+                        <xs:extension base="ns:stringField">
+                            <xs:attribute name="name" type="ns:name" use="required" />
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="integer">
+                <xs:complexType>
+                    <xs:complexContent>
+                        <xs:extension base="ns:integerField">
+                            <xs:attribute name="name" type="ns:name" use="required" />
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="long">
+                <xs:complexType>
+                    <xs:complexContent>
+                        <xs:extension base="ns:longField">
+                            <xs:attribute name="name" type="ns:name" use="required" />
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="decimal">
+                <xs:complexType>
+                    <xs:complexContent>
+                        <xs:extension base="ns:decimalField">
+                            <xs:attribute name="name" type="ns:name" use="required" />
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="date">
+                <xs:complexType>
+                    <xs:complexContent>
+                        <xs:extension base="ns:dateField">
+                            <xs:attribute name="name" type="ns:name" use="required" />
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="array">
+                <xs:complexType>
+                    <xs:complexContent>
+                        <xs:extension base="ns:arrayField">
+                            <xs:attribute name="name" type="ns:name" use="required" />
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="custom">
+                <xs:complexType>
+                    <xs:complexContent>
+                        <xs:extension base="ns:customField">
+                            <xs:attribute name="name" type="ns:name" use="required" />
+                        </xs:extension>
+                    </xs:complexContent>
+                </xs:complexType>
+                <xs:unique name="parameter_named">
+                    <xs:selector xpath="./ns:parameter"/>
+                    <xs:field xpath="@key"/>
+                </xs:unique>
+            </xs:element>
+            <xs:element name="const" type="ns:constField" />
+        </xs:choice>
+    </xs:group>
+
+    <!-- rules -->
+    <xs:complexType name="rule">
+        <xs:attribute name="field" type="ns:path" use="required"/>
+    </xs:complexType>
+    <xs:complexType name="dateRule">
+        <xs:complexContent>
+            <xs:extension base="ns:rule">
+                <xs:attribute name="current" type="xs:boolean" use="required"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="integerRule">
+        <xs:complexContent>
+            <xs:extension base="ns:rule">
+                <xs:attribute name="value" type="xs:integer" use="required"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="longRule">
+        <xs:complexContent>
+            <xs:extension base="ns:rule">
+                <xs:attribute name="value" type="xs:long" use="required"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="decimalRule">
+        <xs:complexContent>
+            <xs:extension base="ns:rule">
+                <xs:attribute name="value" type="xs:decimal" use="required"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="stringRule">
+        <xs:complexContent>
+            <xs:extension base="ns:rule">
+                <xs:attribute name="value" type="xs:string" use="required"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="binaryRule">
+        <xs:complexContent>
+            <xs:extension base="ns:rule">
+                <xs:attribute name="value" type="xs:hexBinary" use="required"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="fieldRule">
+        <xs:complexContent>
+            <xs:extension base="ns:rule">
+                <xs:attribute name="required" type="xs:boolean" use="optional" default="false"/>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="echoRule">
+        <xs:complexContent>
+            <xs:extension base="ns:rule" />
+        </xs:complexContent>
+    </xs:complexType>
+
+    <!-- rule groups -->
+    <xs:group name="requestRules">
+        <xs:choice>
+            <xs:element name="date" type="ns:dateRule" />
+            <xs:element name="integer" type="ns:integerRule" />
+            <xs:element name="long" type="ns:longRule" />
+            <xs:element name="decimal" type="ns:decimalRule" />
+            <xs:element name="string" type="ns:stringRule" />
+            <xs:element name="binary" type="ns:binaryRule" />
+            <xs:element name="field" type="ns:fieldRule" />
+        </xs:choice>
+    </xs:group>
+    <xs:group name="responseRules">
+        <xs:choice>
+            <xs:element name="echo" type="ns:echoRule" />
+            <xs:element name="date" type="ns:dateRule" />
+            <xs:element name="integer" type="ns:integerRule" />
+            <xs:element name="long" type="ns:longRule" />
+            <xs:element name="decimal" type="ns:decimalRule" />
+            <xs:element name="string" type="ns:stringRule" />
+            <xs:element name="binary" type="ns:binaryRule" />
+            <xs:element name="field" type="ns:fieldRule" />
+        </xs:choice>
+    </xs:group>
+
+    <!-- complex types -->
+
+    <xs:complexType name="fieldContainer">
+        <xs:attribute name="length" type="xs:unsignedInt" use="optional" default="0" />
+        <xs:attribute name="charset" type="xs:string" use="optional" />
+        <xs:attribute name="type" type="xs:string" use="required" />
+        <xs:attribute name="factory" type="ns:class" use="optional" />
+    </xs:complexType>
+    <xs:complexType name="fieldMask">
+        <xs:attribute name="left" type="xs:int" use="optional" default="0" />
+        <xs:attribute name="right" type="xs:int" use="optional" default="0" />
+    </xs:complexType>
+
+    <!-- restricted types -->
+    <xs:simpleType name="name">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[_A-Za-z][_A-Za-z0-9]*" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="path">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[_A-Za-z][_A-Za-z0-9]*(\.[_A-Za-z][_A-Za-z0-9]*)*" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="class">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[_$a-zA-Z][_$a-zA-Z0-9]*(\.[_$a-zA-Z][_$a-zA-Z0-9]*)*"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- enumerations -->
+    <xs:simpleType name="align">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="right"/>
+            <xs:enumeration value="left"/>
+            <xs:enumeration value="none"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="formatBinary">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="bch"/>
+            <xs:enumeration value="binary"/>
+            <xs:enumeration value="binary_hex"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="formatString">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="bcd"/>
+            <xs:enumeration value="string"/>
+            <xs:enumeration value="binary_hex"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="formatInteger">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="bcd"/>
+            <xs:enumeration value="bch"/>
+            <xs:enumeration value="packed_bcd"/>
+            <xs:enumeration value="binary"/>
+            <xs:enumeration value="binary_hex"/>
+            <xs:enumeration value="hex_string"/>
+            <xs:enumeration value="string"/>
+            <xs:enumeration value="dc_sint"/>
+            <xs:enumeration value="dc_sint_balance"/>
+            <xs:enumeration value="uint"/>
+            <xs:enumeration value="sint"/>
+            <xs:enumeration value="sint_endsign" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="formatDecimal">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="bcd"/>
+            <xs:enumeration value="bch"/>
+            <xs:enumeration value="packed_bcd"/>
+            <xs:enumeration value="binary"/>
+            <xs:enumeration value="binary_hex"/>
+            <xs:enumeration value="hex_string"/>
+            <xs:enumeration value="string"/>
+            <xs:enumeration value="dc_sint"/>
+            <xs:enumeration value="dc_sint_balance"/>
+            <xs:enumeration value="uint"/>
+            <xs:enumeration value="sint"/>
+            <xs:enumeration value="pp_dec"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="formatLong">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="bcd"/>
+            <xs:enumeration value="bch"/>
+            <xs:enumeration value="packed_bcd"/>
+            <xs:enumeration value="binary"/>
+            <xs:enumeration value="binary_hex"/>
+            <xs:enumeration value="hex_string"/>
+            <xs:enumeration value="string"/>
+            <xs:enumeration value="dc_sint"/>
+            <xs:enumeration value="dc_sint_balance"/>
+            <xs:enumeration value="uint"/>
+            <xs:enumeration value="sint"/>
+            <xs:enumeration value="sint_endsign" />
+        </xs:restriction>
+    </xs:simpleType>
+</xs:schema>

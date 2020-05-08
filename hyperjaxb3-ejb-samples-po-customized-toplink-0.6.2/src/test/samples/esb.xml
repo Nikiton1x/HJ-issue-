@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definition name="KCB-ESB" version="1.4" xmlns="http://schemas.compassplus.com/sdk/1.0/iso_definition.xsd">
+    <types>
+        <java name="Track2" provider="com.cplus.sdk.iso.cust.Track2Provider" />
+
+        <struct name="Processing">
+            <long name="Transaction" length="2" />
+            <long name="FromAcctType" length="2"/>
+            <long name="ToAcctType" length="2"/>
+        </struct>
+
+        <struct name="AmountFee">
+            <string name="Sign" length="1" />
+            <long name="Fee" length="8"/>
+        </struct>
+
+        <struct name="TermInfo">
+            <string name="Location" length="38"/>
+            <string name="Country" length="2"/>
+        </struct>
+
+        <struct name="OriginalData">
+            <long name="MTI" length="4" />
+            <long name="STAN" length="6"/>
+            <date name="GMTTime" length="10" format="MMddHHmmss" empty="0000000000" />
+            <string name="AID" length="11" />
+            <const value="00000000000" />
+        </struct>
+    </types>
+
+    <fields>
+        <header>
+            <long name="MTI" length="4" />
+            <bitmap format="binary_hex" />
+        </header>
+
+        <string index="2" name="PAN" length="19" var="true" >
+            <mask left="6" right="4" />
+        </string>
+        <custom index="3" name="Processing" length="6" type="Processing" />
+        <long index="4" name="Amount" length="12" />
+        <long index="6" name="AmountAcct" length="12" />
+        <date index="7" name="GMTTime" length="10" format="MMddHHmmss" empty="0000000000" />
+        <decimal index="10" name="Conversion" length="8" format="pp_dec" scale="1" />
+        <long index="11" name="STAN"  length="6" />
+        <date index="12" name="Time" length="6" format="HHmmss" empty="000000" />
+        <date index="14" name="DateExpiration" length="4" format="YYMM" empty="0000" />
+        <long index="18" name="SIC" length="4" />
+        <long index="22" name="POSEntry"  length="3" />
+        <long index="23" name="MBR" length="3" />
+        <long index="24" name="FunctionCode" length="3" />
+        <long index="25" name="POSCondition" length="2" />
+        <custom index="28" name="TransactionFee" length="9" type="AmountFee" />
+        <custom index="29" name="BanksFee" length="9" type="AmountFee" />
+        <long index="30" name="ExciseDuty" length="9" />
+        <string index="32" name="AID" length="11" var="true" />
+        <string index="33" name="FID" length="11" var="true" />
+        <string index="34" name="PAN2" length="19" var="true" >
+            <mask left="6" right="4" />
+        </string>
+        <custom index="35" name="Track2" var="true" length="37" type="Track2"/>
+        <string index="37" name="RRN" length="12" />
+        <string index="38" name="Approval" length="6" />
+        <string index="39" name="Response" length="2" />
+        <string index="41" name="TermID" length="8" />
+        <string index="42" name="MerchantID" length="15" />
+        <custom index="43" name="TermInfo" length="40"  type="TermInfo"/>
+        <string index="47" name="ProprietaryField" length="999" var="true"/>
+        <string index="48" name="AdditionalData" length="999" var="true" />
+        <long index="49" name="Currency" length="3" />
+        <string index="50" name="CurrencySettlement" length="3" />
+        <binary index="52" name="PIN" format="binary" length="8" >
+            <mask />
+        </binary>
+        <string index="54" name="AdditionalAmount" length="999" var="true" />
+        <binary index="55" name="ICCData" format="binary_hex" length="512" var="true" >
+            <mask />
+        </binary>
+        <string index="58" name="Area" length="99" var="true" />
+        <string index="60" name="AccountsAdditional" length="999" var="true" />
+        <string index="62" name="PrivateMultiple" length="999" var="true" />
+        <string index="66" name="CustomerPhone" length="99" var="true" />
+        <string index="68" name="Narration" length="99" var="true" />
+        <long index="70" name="NetworkCode" length="3" />
+        <custom index="90" name="OriginalData" length="42" type="OriginalData" />
+        <string index="91" name="ActionCode" length="1" />
+        <long index="95" name="ReplacementAmounts" length="12" />
+        <string index="98" name="Payee" length="99" var="true" />
+        <!--<string index="100" name="BillerId" length="99" var="true" />-->
+        <string length="99" name="FromAcct" index="102" var="true" />
+        <string index="103" name="ToAcct" length="99" var="true" />
+        <string index="114" name="PrivateAdditionalSets" length="9999" var="true" />
+        <string index="123" name="SourceChannel" length="999" var="true" />
+        <string index="127" name="CustomerName" length="999" var="true" />
+    </fields>
+
+    <messages>
+        <class field="MTI"/>
+        <id field="STAN"/>
+
+        <message name="Service">
+            <response>
+                <long field="MTI" value="1370" />
+            </response>
+
+            <long field="MTI" value="1360" />
+        </message>
+
+        <message name="SMS_E_Mail_Notification">
+            <long field="MTI" value="1303" />
+        </message>
+
+        <message name="SignOn">
+            <response>
+                <long field="MTI" value="1814"/>
+                <echo field="GMTTime" />
+                <echo field="STAN" />
+                <field field="Response" required="true"/>
+                <long field="NetworkCode" value="061" />
+            </response>
+
+            <long field="MTI" value="1804" />
+            <field field="GMTTime" required="true" />
+            <field field="STAN" required="true" />
+            <long field="NetworkCode" value="061" />
+        </message>
+
+        <message name="SignOff">
+            <response>
+                <long field="MTI" value="1814"/>
+                <echo field="GMTTime" />
+                <echo field="STAN" />
+                <field field="Response" required="true"/>
+                <long field="NetworkCode" value="062" />
+            </response>
+
+            <long field="MTI" value="1804" />
+            <field field="GMTTime" required="true" />
+            <field field="STAN" required="true" />
+            <long field="NetworkCode" value="062" />
+        </message>
+
+        <message name="KeyExchange">
+            <response>
+                <long field="MTI" value="1814"/>
+                <echo field="GMTTime" />
+                <echo field="STAN" />
+                <field field="Response" required="true"/>
+                <long field="NetworkCode" value="161" />
+            </response>
+
+            <long field="MTI" value="1804" />
+            <field field="GMTTime" required="true" />
+            <field field="STAN" required="true" />
+            <long field="NetworkCode" value="161" />
+        </message>
+
+        <message name="Echo">
+            <response>
+                <long field="MTI" value="1814"/>
+                <echo field="GMTTime" />
+                <echo field="STAN" />
+                <field field="Response" required="true"/>
+                <long field="NetworkCode" value="301" />
+            </response>
+
+            <long field="MTI" value="1804" />
+            <field field="GMTTime" required="true" />
+            <field field="STAN" required="true" />
+            <long field="NetworkCode" value="301" />
+        </message>
+
+        <message name="Authorization">
+            <response>
+                <long field="MTI" value="1110" />
+            </response>
+
+            <long field="MTI" value="1100" />
+        </message>
+
+        <message name="Financial">
+            <response>
+                <long field="MTI" value="1210" />
+                <echo field="PAN" /> <!--F2-->
+                <echo field="Processing" /> <!--F3-->
+                <echo field="Amount" /> <!--F4-->
+                <echo field="GMTTime" /> <!--F7-->
+                <echo field="STAN" /> <!--F11-->
+                <echo field="Time" /> <!--F12-->
+                <echo field="TransactionFee" /> <!--F28-->
+                <echo field="BanksFee" /> <!--F29-->
+                <echo field="Exciseduty" /> <!--F30-->
+                <echo field="AID" /> <!--F32-->
+                <field field="FID" /> <!--F33-->
+                <echo field="RRN" /> <!--F37-->
+                <field field="Approval" /> <!--F38-->
+                <field field="Response" required="true"/> <!--F39-->
+                <echo field="TermID" /> <!--F41-->
+                <echo field="MerchantID" /> <!--F42-->
+                <echo field="TermInfo" /> <!--F43-->
+                <echo field="Currency" /> <!--F49-->
+                <field field="AdditionalAmount" /> <!--F54-->
+                <echo field="Narration" /> <!--F68-->
+                <echo field="FromAcct" /> <!--F102-->
+                <echo field="SourceChannel" /> <!--F123-->
+            </response>
+
+            <long field="MTI" value="1200" />
+            <field field="PAN" /> <!--F2-->
+            <field field="Processing" required="true" /> <!--F3-->
+            <field field="Amount" required="true" /> <!--F4-->
+            <field field="GMTTime" required="true" /> <!--F7-->
+            <field field="STAN" required="true" /> <!--F11-->
+            <field field="Time" required="true" /> <!--F12-->
+            <field field="TransactionFee" /> <!--F28-->
+            <field field="BanksFee" /> <!--F29-->
+            <field field="Exciseduty" /> <!--F30-->
+            <field field="AID" required="true" />
+            <field field="FID" /> <!--F33-->
+            <field field="Track2" /> <!--F35-->
+            <field field="RRN" required="true" /> <!--F37-->
+            <field field="TermID" required="true" /> <!--F41-->
+            <field field="MerchantID" required="true" /> <!--F42-->
+            <field field="TermInfo" required="true" /> <!--F43-->
+            <field field="Currency" required="true" /> <!--F49-->
+            <field field="PIN" /> <!--F52-->
+            <!-- <field field="ICCData" /> описание поля отсутствие в протоколе F55-->
+            <field field="Narration" /> <!--F68-->
+            <field field="FromAcct" /> <!--F102-->
+            <field field="SourceChannel" /> <!--F123-->
+        </message>
+
+        <message name="FinancialAdvice">
+            <response>
+                <long field="MTI" value="1230" />
+            </response>
+
+            <repeat>
+                <long field="MTI" value="1221" />
+            </repeat>
+
+            <long field="MTI" value="1220" />
+        </message>
+
+        <message name="Reversal">
+            <response>
+                <long field="MTI" value="1430" />
+                <echo field="PAN" /> <!--F2-->
+                <echo field="Processing" /> <!--F3-->
+                <echo field="Amount" /> <!--F4-->
+                <echo field="GMTTime" /> <!--F7-->
+                <echo field="STAN" /> <!--F11-->
+                <echo field="Time" /> <!--F12-->
+                <echo field="TransactionFee" /> <!--F28-->
+                <echo field="BanksFee" /> <!--F29-->
+                <echo field="Exciseduty" /> <!--F30-->
+                <field field="FID" /> <!--F33-->
+                <echo field="RRN" /> <!--F37-->
+                <field field="Approval" /> <!--F38-->
+                <field field="Response" required="true"/> <!--F39-->
+                <echo field="TermID" /> <!--F41-->
+                <echo field="MerchantID" /> <!--F42-->
+                <field field="TermInfo" /> <!--F43-->
+                <echo field="Currency" /> <!--F49-->
+                <field field="AdditionalAmount" /> <!--F54-->
+                <echo field="Narration" /> <!--F68-->
+                <echo field="FromAcct" /> <!--F102-->
+                <echo field="SourceChannel" /> <!--F123-->
+            </response>
+
+            <repeat>
+                <long field="MTI" value="1421" />
+            </repeat>
+
+            <long field="MTI" value="1420" />
+            <field field="PAN" /> <!--F2-->
+            <field field="Processing" required="true" /> <!--F3-->
+            <field field="Amount" required="true" /> <!--F4-->
+            <field field="GMTTime" required="true" /> <!--F7-->
+            <field field="STAN" required="true" /> <!--F11-->
+            <field field="Time" required="true" /> <!--F12-->
+            <field field="TransactionFee" /> <!--F28-->
+            <field field="BanksFee" /> <!--F29-->
+            <field field="Exciseduty" /> <!--F30-->
+            <field field="AID" required="true" /> <!-- F32-->
+            <field field="FID" /> <!--F33-->
+            <field field="Track2" required="true" /> <!--F35-->
+            <field field="RRN" required="true" /> <!--F37-->
+            <field field="TermID" required="true" /> <!--F41-->
+            <field field="MerchantID" required="true" /> <!--F42-->
+            <field field="TermInfo" required="true" /> <!--F43-->
+            <field field="Currency" required="true" /> <!--F49-->
+            <field field="PIN" required="true" /> <!--F52-->
+            <field field="ICCData" /> <!--F55-->
+            <field field="Narration" /> <!--F68-->
+            <field field="FromAcct" /> <!--F102-->
+            <field field="SourceChannel" /> <!--F123-->
+        </message>
+
+    </messages>
+</definition>

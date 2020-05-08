@@ -1,0 +1,498 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<j:bindings xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:j="http://java.sun.com/xml/ns/jaxb" xmlns:ns="http://schemas.compassplus.com/sdk/1.0/iso_definition.xsd" xmlns:xjc="http://java.sun.com/xml/ns/jaxb/xjc" j:extensionBindingPrefixes="xjc" version="2.0">
+    <j:globalBindings localScoping="toplevel">
+        <xjc:javaType name="org.joda.time.LocalTime" xmlType="xs:time" adapter="com.cplus.sdk.iso.adapter.TimeAdapter" />
+        <xjc:javaType name="org.joda.time.LocalDate" xmlType="xs:date" adapter="com.cplus.sdk.iso.adapter.DateAdapter" />
+        <xjc:javaType name="org.joda.time.DateTime" xmlType="xs:dateTime" adapter="com.cplus.sdk.iso.adapter.DateTimeAdapter" />
+        <xjc:javaType name="org.joda.time.Period" xmlType="xs:duration" adapter="com.cplus.sdk.iso.adapter.DurationAdapter" />
+        <xjc:javaType name="org.joda.time.LocalDate" xmlType="xs:gDay" adapter="com.cplus.sdk.iso.adapter.DayAdapter" />
+        <xjc:javaType name="org.joda.time.LocalDate" xmlType="xs:gMonthDay" adapter="com.cplus.sdk.iso.adapter.MonthDayAdapter" />
+        <xjc:javaType name="org.joda.time.LocalDate" xmlType="xs:gMonth" adapter="com.cplus.sdk.iso.adapter.MonthAdapter" />
+        <xjc:javaType name="org.joda.time.LocalDate" xmlType="xs:gYear" adapter="com.cplus.sdk.iso.adapter.YearAdapter" />
+        <xjc:javaType name="org.joda.time.LocalDate" xmlType="xs:gYearMonth" adapter="com.cplus.sdk.iso.adapter.YearMonthAdapter" />
+        <xjc:superClass name="com.cplus.sdk.iso.definition.Element" />
+        <j:serializable/>
+    </j:globalBindings>
+
+    <j:bindings schemaLocation="iso-definition.xsd" node="/xs:schema">
+        <j:schemaBindings>
+            <j:package name="com.cplus.sdk.iso.definition" />
+            <j:nameXmlTransform>
+                <j:typeName suffix="_ST" />
+                <j:elementName suffix="_SE" />
+                <j:modelGroupName suffix="_SG" />
+                <j:anonymousTypeName suffix="_SM" />
+            </j:nameXmlTransform>
+        </j:schemaBindings>
+        <j:bindings node="xs:element[@name='definition']">
+            <j:class name="ProtocolDefinition" />
+            <j:bindings node="xs:complexType/xs:sequence">
+                <j:bindings node="xs:element[@ref='ns:types']">
+                    <j:property name="Types" />
+                </j:bindings>
+                <j:bindings node="xs:element[@ref='ns:fields']">
+                    <j:property name="Fields" />
+                </j:bindings>
+                <j:bindings node="xs:choice/xs:element[@ref='ns:messages']">
+                    <j:property name="Messages" />
+                </j:bindings>
+                <j:bindings node="xs:choice/xs:element[@ref='ns:templates']">
+                    <j:property name="Templates" />
+                </j:bindings>
+            </j:bindings>
+        </j:bindings>
+
+        <!-- DATA -->
+        <j:bindings node="xs:complexType[@name='header']">
+            <j:class name="ContentHeader" />
+            <j:bindings node="xs:complexContent/xs:extension">
+                <j:bindings node="xs:sequence/xs:group">
+                    <j:property name="FieldList" />
+                </j:bindings>
+                <j:bindings node="xs:sequence/xs:element[@name='mac']">
+                    <j:property name="FieldAuthentication" />
+                </j:bindings>
+                <j:bindings node="xs:sequence/xs:element[@name='bitmap']">
+                    <j:property name="FieldBitmap" />
+                </j:bindings>
+            </j:bindings>
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='struct']">
+            <j:class name="ContentStruct" />
+            <j:bindings node="xs:sequence/xs:group">
+                <j:property name="FieldList" />
+            </j:bindings>
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='body']">
+            <j:class name="Content" />
+            <j:bindings node="xs:sequence/xs:choice">
+                <j:property name="FieldList" />
+                <j:bindings node="xs:element[@name='condition']/xs:complexType">
+                    <j:class name="FieldCondition" />
+                </j:bindings>
+            </j:bindings>
+        </j:bindings>
+
+        <!-- CONDITIONS -->
+        <j:bindings node="xs:complexType[@name='condition']">
+            <j:class name="Condition" />
+            <j:bindings node="xs:group">
+                <j:property name="Field" />
+            </j:bindings>
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='conditionString']">
+            <j:class name="ConditionString" />
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='conditionLong']">
+            <j:class name="ConditionLong" />
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='conditionCustom']">
+            <j:class name="ConditionCustom" />
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='conditionDefault']">
+            <j:class name="ConditionDefault" />
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='conditionAttribute']">
+            <j:class name="ConditionAttribute" />
+        </j:bindings>
+
+        <j:bindings node="xs:group[@name='conditionFields']/xs:choice">
+            <j:bindings node="xs:element[@name='long']">
+                <j:class ref="com.cplus.sdk.iso.definition.ContentStruct.FieldLong" />
+            </j:bindings>
+            <j:bindings node="xs:element[@name='integer']">
+                <j:class ref="com.cplus.sdk.iso.definition.ContentStruct.FieldInteger" />
+            </j:bindings>
+            <j:bindings node="xs:element[@name='decimal']">
+                <j:class ref="com.cplus.sdk.iso.definition.ContentStruct.FieldDecimal" />
+            </j:bindings>
+            <j:bindings node="xs:element[@name='date']">
+                <j:class ref="com.cplus.sdk.iso.definition.ContentStruct.FieldDate" />
+            </j:bindings>
+            <j:bindings node="xs:element[@name='string']">
+                <j:class ref="com.cplus.sdk.iso.definition.ContentStruct.FieldString" />
+            </j:bindings>
+            <j:bindings node="xs:element[@name='binary']">
+                <j:class ref="com.cplus.sdk.iso.definition.ContentStruct.FieldBinary" />
+            </j:bindings>
+            <j:bindings node="xs:element[@name='custom']">
+                <j:class ref="com.cplus.sdk.iso.definition.ContentStruct.FieldCustom" />
+            </j:bindings>
+            <j:bindings node="xs:element[@name='array']">
+                <j:class ref="com.cplus.sdk.iso.definition.ContentStruct.FieldArray" />
+            </j:bindings>
+        </j:bindings>
+        <j:bindings node="xs:group[@name='indexFields']/xs:choice">
+            <j:bindings node="xs:element[@name='long']/xs:complexType">
+                <j:class name="FieldLong" />
+            </j:bindings>
+            <j:bindings node="xs:element[@name='integer']/xs:complexType">
+                <j:class name="FieldInteger" />
+            </j:bindings>
+            <j:bindings node="xs:element[@name='decimal']/xs:complexType">
+                <j:class name="FieldDecimal" />
+            </j:bindings>
+            <j:bindings node="xs:element[@name='date']/xs:complexType">
+                <j:class name="FieldDate" />
+            </j:bindings>
+            <j:bindings node="xs:element[@name='string']/xs:complexType">
+                <j:class name="FieldString" />
+            </j:bindings>
+            <j:bindings node="xs:element[@name='binary']/xs:complexType">
+                <j:class name="FieldBinary" />
+            </j:bindings>
+            <j:bindings node="xs:element[@name='custom']/xs:complexType">
+                <j:class name="FieldCustom" />
+            </j:bindings>
+            <j:bindings node="xs:element[@name='array']/xs:complexType">
+                <j:class name="FieldArray" />
+            </j:bindings>
+            <j:bindings node="xs:element[@name='const']/xs:complexType">
+                <j:class name="FieldConst" />
+            </j:bindings>
+        </j:bindings>
+
+        <j:bindings node="xs:group[@name='structFields']/xs:choice">
+            <j:bindings node="xs:element[@name='long']/xs:complexType">
+                <j:class name="FieldLong" />
+            </j:bindings>
+            <j:bindings node="xs:element[@name='integer']/xs:complexType">
+                <j:class name="FieldInteger" />
+            </j:bindings>
+            <j:bindings node="xs:element[@name='decimal']/xs:complexType">
+                <j:class name="FieldDecimal" />
+            </j:bindings>
+            <j:bindings node="xs:element[@name='date']/xs:complexType">
+                <j:class name="FieldDate" />
+            </j:bindings>
+            <j:bindings node="xs:element[@name='string']/xs:complexType">
+                <j:class name="FieldString" />
+            </j:bindings>
+            <j:bindings node="xs:element[@name='binary']/xs:complexType">
+                <j:class name="FieldBinary" />
+            </j:bindings>
+            <j:bindings node="xs:element[@name='custom']/xs:complexType">
+                <j:class name="FieldCustom" />
+            </j:bindings>
+            <j:bindings node="xs:element[@name='array']/xs:complexType">
+                <j:class name="FieldArray" />
+            </j:bindings>
+        </j:bindings>
+
+        <!-- MESSAGES -->
+        <j:bindings node="xs:complexType[@name='requestDefinition']">
+            <j:class name="MessageRequest" />
+            <j:bindings node="xs:sequence">
+                <j:bindings node="xs:sequence/xs:element[@name='response']">
+                    <j:property name="ResponseList" />
+                </j:bindings>
+                <j:bindings node="xs:group">
+                    <j:property name="RuleList" />
+                </j:bindings>
+            </j:bindings>
+            <j:bindings node="xs:attribute[@name='mac']">
+                <j:property name="AuthenticationRequired" />
+            </j:bindings>
+            <j:bindings node="xs:attribute[@name='validate']">
+                <j:property name="ValidationRequired" />
+            </j:bindings>
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='responseDefinition']">
+            <j:class name="MessageResponse" />
+            <j:bindings node="xs:sequence">
+                <j:bindings node="xs:group">
+                    <j:property name="RuleList" />
+                </j:bindings>
+            </j:bindings>
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='repeatDefinition']">
+            <j:class name="MessageRepeat" />
+            <j:bindings node="xs:sequence">
+                <j:bindings node="xs:group">
+                    <j:property name="RuleList" />
+                </j:bindings>
+            </j:bindings>
+        </j:bindings>
+
+        <!-- TEMPLATES -->
+        <j:bindings node="xs:complexType[@name='template']">
+            <j:class name="Template" />
+            <j:bindings node="xs:attribute[@name='authentify']">
+                <j:property name="AuthenticationRequired" />
+            </j:bindings>
+            <j:bindings node="xs:attribute[@name='validate']">
+                <j:property name="ValidationRequired" />
+            </j:bindings>
+            <j:bindings node="xs:attribute[@name='key']">
+                <j:property name="Key" />
+            </j:bindings>
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='request']">
+            <j:class name="TemplateRequest" />
+            <j:bindings node="xs:complexContent/xs:extension">
+                <j:bindings node="xs:group">
+                    <j:property name="RuleList" />
+                </j:bindings>
+            </j:bindings>
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='notification']">
+            <j:class name="TemplateNotification" />
+            <j:bindings node="xs:complexContent/xs:extension">
+                <j:bindings node="xs:group">
+                    <j:property name="RuleList" />
+                </j:bindings>
+            </j:bindings>
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='response']">
+            <j:class name="TemplateResponse" />
+            <j:bindings node="xs:complexContent/xs:extension">
+                <j:bindings node="xs:group">
+                    <j:property name="RuleList" />
+                </j:bindings>
+                <j:bindings node="xs:attribute[@name='parent']">
+                    <j:class ref="Template" />
+                </j:bindings>
+            </j:bindings>
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='repeat']">
+            <j:class name="TemplateRepeat" />
+            <j:bindings node="xs:complexContent/xs:extension">
+                <j:bindings node="xs:group">
+                    <j:property name="RuleList" />
+                </j:bindings>
+                <j:bindings node="xs:attribute[@name='parent']">
+                    <j:class ref="Template" />
+                </j:bindings>
+            </j:bindings>
+        </j:bindings>
+
+        <!-- SECTIONS -->
+        <j:bindings node="xs:element[@name='types']/xs:complexType">
+            <j:class name="DefinitionTypes" />
+            <j:bindings node="xs:group">
+                <j:property name="TypeList" />
+            </j:bindings>
+        </j:bindings>
+        <j:bindings node="xs:element[@name='fields']/xs:complexType">
+            <j:class name="DefinitionFields" />
+        </j:bindings>
+        <j:bindings node="xs:element[@name='messages']/xs:complexType">
+            <j:class name="DefinitionMessages" />
+            <j:bindings node="xs:sequence">
+                <j:bindings node="xs:element[@name='id']">
+                    <j:property name="RuleKey" />
+                </j:bindings>
+                <j:bindings node="xs:element[@name='class']">
+                    <j:property name="RuleClass" />
+                </j:bindings>
+                <j:bindings node="xs:element[@name='message']">
+                    <j:property name="MessageList" />
+                </j:bindings>
+            </j:bindings>
+        </j:bindings>
+        <j:bindings node="xs:element[@name='templates']/xs:complexType">
+            <j:class name="DefinitionTemplates" />
+            <j:bindings node="xs:attribute[@name='key']">
+                <j:property name="FieldKey" />
+            </j:bindings>
+            <j:bindings node="xs:attribute[@name='class']">
+                <j:property name="FieldClass" />
+            </j:bindings>
+            <j:bindings node="xs:sequence/xs:element[@name='template']">
+                <j:property name="TemplateList" />
+            </j:bindings>
+        </j:bindings>
+
+        <!-- TYPES -->
+        <j:bindings node="xs:complexType[@name='structType']">
+            <j:class name="TypeStruct" />
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='javaType']">
+            <j:class name="TypeExternal" />
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='compositeType']">
+            <j:class name="TypeComposite" />
+        </j:bindings>
+
+        <!-- ITEMS -->
+        <j:bindings node="xs:complexType[@name='fieldMask']">
+            <j:class name="ElementMask" />
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='fieldContainer']">
+            <j:class name="ElementContainer" />
+        </j:bindings>
+
+        <!-- FIELDS -->
+        <j:bindings node="xs:complexType[@name='field']">
+            <j:class name="Field" />
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='binaryField']">
+            <j:class name="FieldBinary" />
+            <j:bindings node="xs:complexContent/xs:extension">
+                <j:bindings node="xs:sequence/xs:element[@name='constraint']">
+                    <j:property name="ConstraintList" />
+                    <j:bindings node="xs:complexType">
+                        <j:class name="Constraint" />
+                    </j:bindings>
+                </j:bindings>
+                <j:bindings node="xs:attribute[@name='var']">
+                    <j:property name="Variable" />
+                </j:bindings>
+            </j:bindings>
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='stringField']">
+            <j:class name="FieldString" />
+            <j:bindings node="xs:complexContent/xs:extension">
+                <j:bindings node="xs:sequence/xs:element[@name='constraint']">
+                    <j:property name="ConstraintList" />
+                    <j:bindings node="xs:complexType">
+                        <j:class name="Constraint" />
+                    </j:bindings>
+                </j:bindings>
+                <j:bindings node="xs:attribute[@name='var']">
+                    <j:property name="Variable" />
+                </j:bindings>
+            </j:bindings>
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='dateField']">
+            <j:class name="FieldDate" />
+            <j:bindings node="xs:complexContent/xs:extension">
+                <j:bindings node="xs:attribute[@name='zone']">
+                    <j:property>
+                        <j:baseType>
+                            <xjc:javaType name="org.joda.time.DateTimeZone" adapter="com.cplus.sdk.iso.adapter.TimeZoneAdapter" />
+                        </j:baseType>
+                    </j:property>
+                </j:bindings>
+                <j:bindings node="xs:attribute[@name='format']">
+                    <j:property>
+                        <j:baseType>
+                            <xjc:javaType name="org.joda.time.format.DateTimeFormatter" adapter="com.cplus.sdk.iso.adapter.DateTimeFormatAdapter" />
+                        </j:baseType>
+                    </j:property>
+                </j:bindings>
+                <j:bindings node="xs:attribute[@name='var']">
+                    <j:property name="Variable" />
+                </j:bindings>
+            </j:bindings>
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='integerField']">
+            <j:class name="FieldInteger" />
+            <j:bindings node="xs:complexContent/xs:extension">
+                <j:bindings node="xs:sequence/xs:element[@name='constraint']">
+                    <j:property name="ConstraintList" />
+                    <j:bindings node="xs:complexType">
+                        <j:class name="Constraint" />
+                    </j:bindings>
+                </j:bindings>
+                <j:bindings node="xs:attribute[@name='var']">
+                    <j:property name="Variable" />
+                </j:bindings>
+            </j:bindings>
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='longField']">
+            <j:class name="FieldLong" />
+            <j:bindings node="xs:complexContent/xs:extension">
+                <j:bindings node="xs:sequence/xs:element[@name='constraint']">
+                    <j:property name="ConstraintList" />
+                    <j:bindings node="xs:complexType">
+                        <j:class name="Constraint" />
+                    </j:bindings>
+                </j:bindings>
+                <j:bindings node="xs:attribute[@name='var']">
+                    <j:property name="Variable" />
+                </j:bindings>
+            </j:bindings>
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='decimalField']">
+            <j:class name="FieldDecimal" />
+            <j:bindings node="xs:complexContent/xs:extension">
+                <j:bindings node="xs:sequence/xs:element[@name='constraint']">
+                    <j:property name="ConstraintList" />
+                    <j:bindings node="xs:complexType">
+                        <j:class name="Constraint" />
+                    </j:bindings>
+                </j:bindings>
+                <j:bindings node="xs:attribute[@name='var']">
+                    <j:property name="Variable" />
+                </j:bindings>
+            </j:bindings>
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='customField']">
+            <j:class name="FieldCustom" />
+            <j:bindings node="xs:complexContent/xs:extension">
+                <j:bindings node="xs:sequence/xs:element[@name='parameter']">
+                    <j:property name="ParameterList" />
+                    <j:bindings node="xs:complexType">
+                        <j:class name="Parameter" />
+                    </j:bindings>
+                </j:bindings>
+                <j:bindings node="xs:attribute[@name='var']">
+                    <j:property name="Variable" />
+                </j:bindings>
+            </j:bindings>
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='arrayField']">
+            <j:class name="FieldArray" />
+            <j:bindings node="xs:complexContent/xs:extension">
+                <j:bindings node="xs:sequence">
+                    <j:bindings node="xs:element[@name='constraint']">
+                        <j:property name="ConstraintList" />
+                        <j:bindings node="xs:complexType">
+                            <j:class name="Constraint" />
+                        </j:bindings>
+                    </j:bindings>
+                    <j:bindings node="xs:group[@ref='ns:arrayFields']">
+                        <j:property name="Field" />
+                    </j:bindings>
+                </j:bindings>
+                <j:bindings node="xs:attribute[@name='var']">
+                    <j:property name="Variable" />
+                </j:bindings>
+            </j:bindings>
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='conditionField']">
+            <j:class name="FieldByCondition" />
+            <j:bindings node="xs:complexContent/xs:extension">
+                <j:bindings node="xs:group">
+                    <j:property name="ConditionList" />
+                </j:bindings>
+            </j:bindings>
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='constField']">
+            <j:class name="FieldConst" />
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='specialField']">
+            <j:class name="FieldSpecial" />
+        </j:bindings>
+
+        <!-- RULES -->
+        <j:bindings node="xs:complexType[@name='rule']">
+            <j:class name="Rule" />
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='dateRule']">
+            <j:class name="RuleDate" />
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='integerRule']">
+            <j:class name="RuleInteger" />
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='longRule']">
+            <j:class name="RuleLong" />
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='decimalRule']">
+            <j:class name="RuleDecimal" />
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='stringRule']">
+            <j:class name="RuleString" />
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='binaryRule']">
+            <j:class name="RuleBinary" />
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='fieldRule']">
+            <j:class name="RuleField" />
+        </j:bindings>
+        <j:bindings node="xs:complexType[@name='echoRule']">
+            <j:class name="RuleEcho" />
+        </j:bindings>
+    </j:bindings>
+</j:bindings>
